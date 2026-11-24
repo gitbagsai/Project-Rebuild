@@ -19,7 +19,8 @@ Kinds and their fields:
   label      text, position: "bottom-left" (default) | "top-left" | "bottom-right"
   stamp      text, angle (default -8), color (default accent), scale (default 1)
   chapter    nodes: [..], active: index lit up to (0-based), part: "PART 03", title: "THE TWO OF YOU",
-             complete: false (true = all nodes lit and connected, no title)
+             complete: false (true = all nodes lit and connected, no title),
+             numbers: ["5", "4", ...] (optional labels inside the nodes, e.g. for a countdown)
   stat       before, after, label_before, label_after, caption (optional)
   checklist  items: [..], checked: number checked (default all), position: "left" | "center"
   stars      total (default 6), filled, tag (optional small text, e.g. "-1"), icons: [short words] (optional)
@@ -306,7 +307,7 @@ def card_chapter(k, c):
             d = ImageDraw.Draw(img)
         d.ellipse((x - r, y - r, x + r, y + r), fill=k.rgb("accent" if on else "night", 255),
                   outline=k.rgb("paper", 255 if on else 90), width=k.px(4))
-        num = str(i + 1)
+        num = str((c.get("numbers") or [])[i] if i < len(c.get("numbers") or []) else i + 1)
         nf = k.font(28 if on else 24)
         d.text((x - d.textlength(num, font=nf) / 2, y - nf.size * 0.62), num, font=nf,
                fill=k.rgb("ink" if on else "paper", 255 if on else 130))

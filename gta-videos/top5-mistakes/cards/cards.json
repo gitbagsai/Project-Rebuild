@@ -1,0 +1,343 @@
+{
+ "width": 1920,
+ "height": 1080,
+ "theme": {
+  "accent": "#FF7A3D",
+  "accent2": "#3DE0C4",
+  "paper": "#FFF8EC",
+  "ink": "#101418",
+  "night": "#0E1B2B",
+  "font_bold": null,
+  "font_regular": null
+ },
+ "cards": [
+  {
+   "name": "map_1",
+   "kind": "chapter",
+   "nodes": [
+    "Pocket cash",
+    "The hat",
+    "Psycho",
+    "Autosave",
+    "Tourist Trap"
+   ],
+   "active": 0,
+   "part": "Mistake 05",
+   "title": "Pocket cash",
+   "numbers": [
+    "5",
+    "4",
+    "3",
+    "2",
+    "1"
+   ]
+  },
+  {
+   "name": "map_2",
+   "kind": "chapter",
+   "nodes": [
+    "Pocket cash",
+    "The hat",
+    "Psycho",
+    "Autosave",
+    "Tourist Trap"
+   ],
+   "active": 1,
+   "part": "Mistake 04",
+   "title": "The hat",
+   "numbers": [
+    "5",
+    "4",
+    "3",
+    "2",
+    "1"
+   ]
+  },
+  {
+   "name": "map_3",
+   "kind": "chapter",
+   "nodes": [
+    "Pocket cash",
+    "The hat",
+    "Psycho",
+    "Autosave",
+    "Tourist Trap"
+   ],
+   "active": 2,
+   "part": "Mistake 03",
+   "title": "Psycho tier",
+   "numbers": [
+    "5",
+    "4",
+    "3",
+    "2",
+    "1"
+   ]
+  },
+  {
+   "name": "map_4",
+   "kind": "chapter",
+   "nodes": [
+    "Pocket cash",
+    "The hat",
+    "Psycho",
+    "Autosave",
+    "Tourist Trap"
+   ],
+   "active": 3,
+   "part": "Mistake 02",
+   "title": "Trusting autosave",
+   "numbers": [
+    "5",
+    "4",
+    "3",
+    "2",
+    "1"
+   ]
+  },
+  {
+   "name": "map_5",
+   "kind": "chapter",
+   "nodes": [
+    "Pocket cash",
+    "The hat",
+    "Psycho",
+    "Autosave",
+    "Tourist Trap"
+   ],
+   "active": 4,
+   "part": "Mistake 01",
+   "title": "Tourist Trap",
+   "numbers": [
+    "5",
+    "4",
+    "3",
+    "2",
+    "1"
+   ]
+  },
+  {
+   "name": "map_all",
+   "kind": "chapter",
+   "nodes": [
+    "Pocket cash",
+    "The hat",
+    "Psycho",
+    "Autosave",
+    "Tourist Trap"
+   ],
+   "complete": true,
+   "numbers": [
+    "5",
+    "4",
+    "3",
+    "2",
+    "1"
+   ]
+  },
+  {
+   "name": "famitsu_nelson",
+   "kind": "headline",
+   "source": "Famitsu · Rob Nelson, Rockstar North (paraphrased)",
+   "title": "Jason and Lucia have bank accounts as well as the cash they carry",
+   "dek": "Getting Wasted or Busted puts that cash at risk."
+  },
+  {
+   "name": "money_split",
+   "kind": "stat",
+   "before": "BANK",
+   "after": "POCKET",
+   "label_before": "Safe",
+   "label_after": "Lost if Wasted or Busted",
+   "caption": "Per guides and Rockstar North's Rob Nelson"
+  },
+  {
+   "name": "check_bank",
+   "kind": "checklist",
+   "items": [
+    "Rob it",
+    "Bank it",
+    "Then be an idiot"
+   ],
+   "checked": 3
+  },
+  {
+   "name": "stars_heat",
+   "kind": "stars",
+   "total": 6,
+   "filled": 3,
+   "icons": [
+    "Outfit",
+    "Face",
+    "Vehicle"
+   ]
+  },
+  {
+   "name": "stars_red",
+   "kind": "stars",
+   "total": 6,
+   "filled": 3,
+   "tag": "Looking for you"
+  },
+  {
+   "name": "stamp_hat",
+   "kind": "stamp",
+   "text": "Hat ≠ disguise",
+   "color": "accent2"
+  },
+  {
+   "name": "meter_profile",
+   "kind": "meter",
+   "title": "Criminal profile",
+   "left": "Professional",
+   "right": "Irredeemable",
+   "value": 0.62,
+   "chips": [
+    "Clean jobs",
+    "Calm down",
+    "Rampage"
+   ]
+  },
+  {
+   "name": "meter_profile_back",
+   "kind": "meter",
+   "title": "Criminal profile",
+   "left": "Professional",
+   "right": "Irredeemable",
+   "value": 0.35
+  },
+  {
+   "name": "stamp_permanent",
+   "kind": "stamp",
+   "text": "Permanent"
+  },
+  {
+   "name": "check_irredeemable",
+   "kind": "checklist",
+   "items": [
+    "Shot on sight",
+    "No surrender",
+    "Less Focus"
+   ],
+   "checked": 3
+  },
+  {
+   "name": "label_unclear",
+   "kind": "label",
+   "text": "Story effect: unconfirmed"
+  },
+  {
+   "name": "title_do_you",
+   "kind": "title",
+   "text": "Do you?"
+  },
+  {
+   "name": "stat_slots",
+   "kind": "stat",
+   "before": "1",
+   "after": "15",
+   "label_before": "Autosave",
+   "label_after": "Manual slots",
+   "caption": "No mission replay. Not even after the credits."
+  },
+  {
+   "name": "stamp_no_replay",
+   "kind": "stamp",
+   "text": "No replay"
+  },
+  {
+   "name": "check_saves",
+   "kind": "checklist",
+   "items": [
+    "Save now",
+    "Then load"
+   ],
+   "checked": 2
+  },
+  {
+   "name": "check_slots",
+   "kind": "checklist",
+   "items": [
+    "One per chapter",
+    "One rolling",
+    "One spare"
+   ],
+   "checked": 3
+  },
+  {
+   "name": "title_four_quick",
+   "kind": "title",
+   "text": "Four quick ones",
+   "sub": "Before number one"
+  },
+  {
+   "name": "label_dye",
+   "kind": "label",
+   "text": "Dye packs"
+  },
+  {
+   "name": "label_jammer",
+   "kind": "label",
+   "text": "Jammer: Ch.3 · Credit Check"
+  },
+  {
+   "name": "label_mask",
+   "kind": "label",
+   "text": "Mask before the crime"
+  },
+  {
+   "name": "label_missable",
+   "kind": "label",
+   "text": "Missable after Tourist Trap"
+  },
+  {
+   "name": "stamp_gone",
+   "kind": "stamp",
+   "text": "Gone"
+  },
+  {
+   "name": "check_lose",
+   "kind": "checklist",
+   "items": [
+    "Personal vehicles",
+    "Upgrades",
+    "House",
+    "Wallet cash",
+    "Checking balance"
+   ],
+   "checked": 0
+  },
+  {
+   "name": "check_keep",
+   "kind": "checklist",
+   "items": [
+    "Family savings (capped)",
+    "Lucia relationship",
+    "Unique weapons"
+   ],
+   "checked": 3
+  },
+  {
+   "name": "check_before",
+   "kind": "checklist",
+   "items": [
+    "Finish side activities",
+    "Spend what you'd lose",
+    "Manual save"
+   ],
+   "checked": 3
+  },
+  {
+   "name": "stamp_receipts",
+   "kind": "stamp",
+   "text": "It keeps receipts",
+   "scale": 0.8
+  },
+  {
+   "name": "title_comment",
+   "kind": "title",
+   "text": "Pocket cash or Tourist Trap?",
+   "sub": "Which one got you"
+  }
+ ]
+}
