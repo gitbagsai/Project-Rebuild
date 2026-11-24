@@ -1,0 +1,33 @@
+{
+  "width": 1920,
+  "height": 1080,
+  "theme": {
+    "accent": "#FF3D7F",
+    "accent2": "#FFC24B",
+    "paper": "#F6F3EE",
+    "ink": "#141414",
+    "night": "#120F1C",
+    "font_bold": null,
+    "font_regular": null
+  },
+  "cards": [
+    {"name": "ch_map_1", "kind": "chapter", "nodes": ["Cops", "Body", "Duo", "Guns", "Cars", "Money", "People", "World"],
+     "active": 0, "part": "Part 01", "title": "The Cops"},
+    {"name": "ch_map_all", "kind": "chapter", "nodes": ["Cops", "Body", "Duo", "Guns", "Cars", "Money", "People", "World"],
+     "complete": true},
+    {"name": "quote_demo", "kind": "quote", "source": "Example Outlet · Sept 2026",
+     "text": "The world is more grounded and reactive than before, and the days of moving through the city without consequences are over.",
+     "states": [[], ["grounded and reactive"], ["grounded and reactive", "without consequences are over"]]},
+    {"name": "headline_demo", "kind": "headline", "source": "Example Outlet", "title": "Creators confirm hands-off previews at the studio",
+     "dek": "Several YouTubers attended private previews."},
+    {"name": "label_hovercraft", "kind": "label", "text": "Hovercraft"},
+    {"name": "stamp_not_in", "kind": "stamp", "text": "Not in GTA VI"},
+    {"name": "stat_anims", "kind": "stat", "before": "55,000", "after": "600,000+", "label_before": "GTA V",
+     "label_after": "GTA VI", "caption": "NPC animations, per previews"},
+    {"name": "check_days", "kind": "checklist", "items": ["Day 1", "Day 2", "Day 3"], "checked": 3},
+    {"name": "stars_split", "kind": "stars", "total": 6, "filled": 3, "tag": "-1 ★", "icons": ["Witness", "Outfit", "Car"]},
+    {"name": "meter_profile", "kind": "meter", "title": "Criminal profile", "left": "Professional", "right": "Irredeemable",
+     "value": 0.5, "chips": ["Jewelry store", "Pet a dog", "Recycle a can"]},
+    {"name": "five_left", "kind": "title", "text": "Five left", "sub": "Zoom out"}
+  ]
+}

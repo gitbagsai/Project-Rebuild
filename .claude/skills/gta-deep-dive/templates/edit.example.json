@@ -1,0 +1,34 @@
+{
+  "width": 1920, "height": 1080, "fps": 30,
+  "voice": {"source": "../audio/vo.wav", "start": 0.4, "gain_db": 0},
+  "game_audio_db": -26,
+  "shots": [
+    {"start": 0.0, "end": 2.9, "source": "../sources/gta5_store.mp4", "in": 31.2, "credit": "Creator A", "game_db": -9,
+     "note": "Cold open: game audio leads 0.4 s before the first word"},
+    {"start": 2.9, "end": 5.6, "source": "../sources/gta5_wanted.mp4", "in": 192.4, "credit": "Creator B",
+     "note": "'drive around the block' - stars disappear"},
+    {"start": 5.6, "end": 8.4, "source": "../sources/trailer1.mp4", "in": 44.0, "credit": "Rockstar Games",
+     "blur": 18, "dim": 0.45, "note": "Backdrop for the stars card on 'shirt'"},
+    {"start": 8.4, "end": 10.3, "source": "../sources/trailer2.mp4", "in": 64.1, "credit": "Rockstar Games",
+     "note": "'your car can run out of gas' - fuel gauge"},
+    {"start": 10.3, "end": 14.0, "source": "../sources/gta5_firstperson.mp4", "in": 12.0, "credit": "Creator C",
+     "zoom": 1.15, "focus": [0.5, 0.45], "note": "Big reveal - stamp lands on 'first person'"},
+    {"start": 14.0, "end": 16.5, "source": "../sources/cover.jpg", "push": 1.06, "note": "Magazine cover still"}
+  ],
+  "overlays": [
+    {"image": "../cards/out/stars_split.png", "start": 5.9, "end": 8.4},
+    {"image": "../cards/out/stamp_not_in.png", "start": 11.1, "end": 14.0, "fade_in": 0.06},
+    {"image": "../cards/out/label_hovercraft.png", "start": 8.4, "end": 10.3, "fade_in": 0, "fade_out": 0}
+  ],
+  "music": [
+    {"source": "../music/bed_chill.mp3", "start": 0.4, "end": 16.5, "in": 0, "gain_db": -20, "fade_in": 1.0, "fade_out": 1.5}
+  ],
+  "music_drops": [
+    {"start": 5.55, "end": 5.85},
+    {"start": 10.6, "end": 14.0}
+  ],
+  "sfx": [
+    {"source": "../sfx/hit.wav", "start": 5.88, "gain_db": -8},
+    {"source": "../sfx/hit.wav", "start": 11.08, "gain_db": -6}
+  ]
+}
