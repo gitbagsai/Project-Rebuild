@@ -35,6 +35,9 @@ def main():
         else:
             ok = ok and not required
             print(f"MISSING python module {mod}: {how}")
+    if shutil.which("yt-dlp") and not any(shutil.which(js) for js in ("deno", "node", "bun", "qjs")):
+        print("WARN no JavaScript runtime (deno recommended): recent yt-dlp needs one for many YouTube formats. "
+              "Install deno (https://deno.com) if downloads fail with missing-format errors.")
     if shutil.which("ffmpeg"):
         filters = subprocess.run(["ffmpeg", "-hide_banner", "-filters"], capture_output=True, text=True).stdout
         for f in ("zoompan", "gblur", "loudnorm", "alimiter"):

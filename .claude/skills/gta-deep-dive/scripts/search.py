@@ -37,22 +37,30 @@ def main():
         lim, used, cap = _budget.check(root, "search")
         attempt = uuid.uuid4().hex[:10]
         _budget.append(root, {"kind": "search", "attempt": attempt, "state": "started", "query": a.query})
-        proc = subprocess.run([ytdlp, "--ignore-config", "--flat-playlist", "-J", "--no-warnings",
-                               "--extractor-retries", "0", "--socket-timeout", "20",
-                               f"ytsearch{n}:{a.query}"],
-                              capture_output=True, text=True, encoding="utf8", errors="replace", timeout=120)
-        out = proc.stdout + proc.stderr
-        if _budget.is_blocked(out):
-            _budget.append(root, {"kind": "search", "attempt": attempt, "state": "blocked", "query": a.query})
-            raise SystemExit("YouTube refused the request (rate limit / bot check). Network requests are now "
-                             "stopped for this project.")
-        if proc.returncode != 0:
-            _budget.append(root, {"kind": "search", "attempt": attempt, "state": "failed", "query": a.query})
-            raise SystemExit("Search failed:\n" + proc.stderr[-800:])
-        data = json.loads(proc.stdout)
-        entries = data.get("entries") or []
-        _budget.append(root, {"kind": "search", "attempt": attempt, "state": "done", "query": a.query,
-                              "results": len(entries)})
+        end = {"kind": "search", "attempt": attempt, "state": "failed", "query": a.query}
+        try:
+            proc = subprocess.run([ytdlp, "--ignore-config", "--flat-playlist", "-J", "--no-warnings",
+                                   "--extractor-retries", "0", "--socket-timeout", "20",
+                                   f"ytsearch{n}:{a.query}"],
+                                  capture_output=True, text=True, encoding="utf8", errors="replace", timeout=120)
+            out = proc.stdout + proc.stderr
+            if _budget.is_blocked(out):
+                end["state"] = "blocked"
+                raise SystemExit("YouTube refused the request (rate limit / bot check). Network requests are now "
+                                 "stopped for this project.")
+            if proc.returncode != 0:
+                end["detail"] = proc.stderr[-600:]
+                raise SystemExit("Search failed:\n" + proc.stderr[-800:])
+            entries = json.loads(proc.stdout).get("entries") or []
+            end.update(state="done", results=len(entries))
+        except subprocess.TimeoutExpired:
+            end["detail"] = "timeout"
+            raise SystemExit("Search timed out (counted as a failed search).")
+        except ValueError as e:
+            end["detail"] = f"bad JSON: {e}"
+            raise SystemExit("Search returned unreadable output (counted as a failed search).")
+        finally:
+            _budget.append(root, end)
     with (root / "candidates.jsonl").open("a", encoding="utf8") as f:
         for i, e in enumerate(entries, 1):
             row = {"query": a.query, "id": e.get("id"), "url": e.get("url") or f"https://www.youtube.com/watch?v={e.get('id')}",

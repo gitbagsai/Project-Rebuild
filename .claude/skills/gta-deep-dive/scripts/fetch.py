@@ -114,13 +114,13 @@ def main():
                     logdir.mkdir(exist_ok=True)
                     (logdir / f"{attempt}_{a.id}.log").write_text(" ".join(cmd) + "\n\n" + detail, encoding="utf8")
                     vids = [f for f in work.iterdir() if f.suffix.lower() in (".mp4", ".mkv", ".webm", ".mov")]
-                    if _budget.is_blocked(detail):
-                        state = "blocked"
-                    elif proc.returncode == 0 and vids:
+                    if proc.returncode == 0 and vids:
                         for f in work.iterdir():
                             if f.is_file():
                                 f.replace(root / f.name)
                         state = "saved"
+                    elif _budget.is_blocked(detail):
+                        state = "blocked"
         except KeyboardInterrupt:
             state = "interrupted"
             raise
@@ -137,7 +137,8 @@ def main():
             meta = json.loads(info_file.read_text(encoding="utf8"))
             info = {"title": meta.get("title"), "channel": meta.get("channel") or meta.get("uploader"),
                     "upload_date": meta.get("upload_date"), "duration": meta.get("duration")}
-        files = [f.name for f in root.glob(a.id + ".*") if not f.name.endswith(".json")]
+        files = sorted((f.name for f in root.glob(a.id + ".*") if not f.name.endswith(".json")),
+                       key=lambda n: not n.lower().endswith((".mp4", ".mkv", ".webm", ".mov", ".png", ".jpg", ".webp")))
         manifest_add(root, dict(id=a.id, url=a.url, file=files[0] if files else None, credit=a.credit,
                                 basis=a.basis, section=a.section, **info))
         print(f"Saved {files[0] if files else a.id} | download {used + 1}/{cap} used.")

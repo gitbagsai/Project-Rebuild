@@ -44,4 +44,7 @@ You get the video, the script, an editable edit file (`edit/edit.json`), the car
 - **Downloads are limited on purpose** (12 searches, 20 downloads, one at a time, 6 s apart per project). If YouTube shows a rate limit or bot check, Claude stops downloading and finishes with what it has. You can change the limits in `PROJECT/sources/budget.json`.
 - **Credit and rights.** Every third-party clip gets an on-screen credit and a line in the credits file. Commentary use of short clips is common on YouTube, but it is not a guarantee against claims; use music you own the rights to, prefer official trailers, and ask creators when you use a lot of their footage.
 - **Make it yours.** Change the colours and fonts in `cards/cards.json` (the `theme` block) so your channel has its own look.
+- **yt-dlp needs a JavaScript runtime** for many YouTube formats; install [deno](https://deno.com) if downloads fail with missing-format errors. `check_tools.py` warns about this.
+- **Run downloads from your own computer.** Cloud sessions usually can't reach YouTube's video servers, and YouTube bot-checks cloud IPs.
+- **Rendering is single-pass.** Cards and credit pills are composited while each shot is encoded, so the picture is encoded once and render time grows linearly with length. Changing one card re-renders only the shots under it.
 - Claude can see frames but cannot listen. Watch the finished video once with sound, especially the big reveal and the ending.

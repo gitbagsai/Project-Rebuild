@@ -27,6 +27,10 @@ EDL (paths relative to edit.json):
   "sfx": [{"source": "sfx/hit.wav", "start": 23.45, "gain_db": -6}]
 }
 
+Overlays and credit pills are composited inside each shot's single encode (an overlay that spans a cut is
+split at the cut, fades stay on global time), so the picture is encoded once and joined without re-encoding.
+Credit pills use the theme from cards/cards.json next to edit/ (or "cards_spec": "path/to/cards.json").
+
 Levels: voice and every music cue are loudness-matched to -16 LUFS first, so music gain_db is relative
 to the voice (-18 to -22 sits like the reference style). Clip audio uses game_db as a plain gain.
 Shots render once into OUT_work/ and are reused while their settings and source are unchanged.
@@ -48,7 +52,7 @@ IMAGE_EXT = {".png", ".jpg", ".jpeg", ".webp", ".bmp"}
 SHOT_KEYS = {"start", "end", "source", "in", "credit", "game_db", "speed", "zoom", "focus", "blur", "dim",
              "freeze", "push", "note", "label"}
 TOP_KEYS = {"width", "height", "fps", "voice", "duration", "game_audio_db", "shots", "overlays", "music",
-            "music_drops", "sfx", "notes"}
+            "music_drops", "sfx", "notes", "cards_spec"}
 
 
 class EDLError(Exception):
@@ -95,6 +99,10 @@ def validate(e, P):
     prev_end = 0.0
     for i, s in enumerate(shots):
         tag = f"shot {i + 1} ({s.get('start')}-{s.get('end')})"
+        missing = [k for k in ("start", "end", "source") if k not in s]
+        if missing:
+            errors.append(f"{tag}: missing {missing}")
+            continue
         bad = set(s) - SHOT_KEYS
         if bad:
             errors.append(f"{tag}: unknown keys {sorted(bad)}")
@@ -125,14 +133,19 @@ def validate(e, P):
     if prev_end + 1.0 / fps < total:
         errors.append(f"shots end at {prev_end:.2f}s but duration is {total:.2f}s")
     for o in e.get("overlays", []):
+        if not {"image", "start", "end"} <= set(o):
+            errors.append(f"overlay {o}: needs image, start and end")
+            continue
         if not P(o["image"]).exists():
             errors.append(f"overlay missing: {o['image']}")
         if not 0 <= o["start"] < o["end"] <= total + 0.05:
             errors.append(f"overlay {o['image']} {o['start']}-{o['end']} outside the film")
     for kind in ("music", "sfx"):
         for c in e.get(kind, []):
-            if not P(c["source"]).exists():
-                errors.append(f"{kind} missing: {c['source']}")
+            if "source" not in c or not P(c["source"]).exists():
+                errors.append(f"{kind} missing: {c.get('source')}")
+            elif kind == "music" and not c.get("end", 0) > c.get("start", 0):
+                errors.append(f"music {c['source']}: end must be after start")
     v = e.get("voice")
     if v and not P(v["source"]).exists():
         errors.append(f"voice missing: {v['source']}")
@@ -169,13 +182,29 @@ def report(e, P, total):
         print(f"Repeated shot {src}@{tin}s at {', '.join(f'{x:.1f}' for x in starts)} (OK only as a callback)")
 
 
-def shot_hash(s, src, W, H, fps, preview):
+def shot_hash(s, src, ovs, W, H, fps, preview):
     st = src.stat()
-    blob = json.dumps([s, str(src), st.st_size, st.st_mtime_ns, W, H, fps, preview, 5], sort_keys=True)
+    ov_ids = [[o, Path(o["path"]).stat().st_size, Path(o["path"]).stat().st_mtime_ns] for o in ovs]
+    blob = json.dumps([s, str(src), st.st_size, st.st_mtime_ns, ov_ids, W, H, fps, preview, 6], sort_keys=True)
     return hashlib.sha1(blob.encode()).hexdigest()[:16]
 
 
-def render_shot(s, src, out_v, out_a, W, H, fps, game_db, threads, preview):
+def shot_overlays(s, overlays, fps):
+    """Overlays (global times) that are visible during this shot, as shot-local pieces."""
+    a, b = s["start"], s["end"]
+    out = []
+    for o in overlays:
+        st, en = float(o["start"]), float(o["end"])
+        lo, hi = max(st, a), min(en, b)
+        if hi - lo < 0.5 / fps:
+            continue
+        out.append({"path": o["path"], "on": round(lo - a, 4), "off": round(hi - a, 4), "g_start": st, "g_end": en,
+                    "fade_in": float(o.get("fade_in", 0.12)), "fade_out": float(o.get("fade_out", 0.12)),
+                    "shot_start": a})
+    return out
+
+
+def render_shot(s, src, out_v, out_a, W, H, fps, game_db, threads, preview, ovs=()):
     dur = s["end"] - s["start"]
     frames = max(1, round(s["end"] * fps) - round(s["start"] * fps))
     is_img = src.suffix.lower() in IMAGE_EXT
@@ -204,15 +233,31 @@ def render_shot(s, src, out_v, out_a, W, H, fps, game_db, threads, preview):
         vf.append(f"gblur=sigma={float(s['blur']) * (0.5 if preview else 1)}")
     if s.get("dim"):
         vf.append(f"drawbox=x=0:y=0:w=iw:h=ih:t=fill:color=black@{min(0.9, float(s['dim']))}")
+    vf.append(f"tpad=stop_mode=clone:stop={frames},trim=end_frame={frames},setsar=1")
+    # Overlays: one still per input, repeated inside the graph; fades run on the film's global clock so an
+    # overlay split across a cut fades exactly as one continuous overlay would.
+    graph, last, ov_inputs = [f"[0:v]{','.join(vf)}[b0]"], "[b0]", []
+    for j, o in enumerate(ovs, 1):
+        ov_inputs += ["-i", o["path"]]
+        f = [f"[{j}:v]format=rgba,scale={W}:{H},loop=loop={frames}:size=1:start=0,trim=end_frame={frames},"
+             f"settb=1/{fps * 1000},setpts=(N/{fps}+{o['shot_start']:.4f})/TB"]
+        if o["fade_in"] > 0:
+            f.append(f"fade=t=in:st={o['g_start']:.4f}:d={o['fade_in']:.4f}:alpha=1")
+        if o["fade_out"] > 0:
+            f.append(f"fade=t=out:st={max(o['g_start'], o['g_end'] - o['fade_out']):.4f}:d={o['fade_out']:.4f}:alpha=1")
+        f.append(f"setpts=N/{fps}/TB")
+        graph.append(",".join(f) + f"[o{j}]")
+        graph.append(f"{last}[o{j}]overlay=0:0:eof_action=pass:enable='gte(t,{o['on'] - 0.5 / fps:.4f})*"
+                     f"lt(t,{o['off'] - 0.5 / fps:.4f})'[b{j}]")
+        last = f"[b{j}]"
     # Every shot must share one pixel format and colour range, or the joined picture changes format
     # mid-stream (JPEG stills are full range) and later filters reset.
-    vf.append(f"tpad=stop_mode=clone:stop={frames},trim=end_frame={frames},setsar=1,"
-              "scale=out_range=tv:out_color_matrix=bt709,format=yuv420p")
+    graph.append(f"{last}scale=out_range=tv:out_color_matrix=bt709,format=yuv420p[vout]")
     enc = ["-color_range", "tv", "-colorspace", "bt709", "-color_primaries", "bt709", "-color_trc", "bt709",
            "-c:v", "libx264", "-preset", "ultrafast" if preview else "medium", "-crf", "26" if preview else "17",
            "-g", str(fps * 2), "-r", str(fps), "-threads", str(threads)]
-    run(["ffmpeg", "-v", "error", "-y", "-nostdin", *inp, "-vf", ",".join(vf), "-an", "-frames:v", str(frames),
-         *enc, str(out_v)])
+    run(["ffmpeg", "-v", "error", "-y", "-nostdin", *inp, *ov_inputs, "-filter_complex", ";".join(graph),
+         "-map", "[vout]", "-an", "-frames:v", str(frames), *enc, str(out_v)])
     # Clip audio (silence for stills, freezes or silent sources).
     has_audio = False
     if not is_img and not s.get("freeze"):
@@ -240,39 +285,6 @@ def concat(files, out, work, copy=True, extra=()):
     lst.write_text("".join(f"file '{f.resolve().as_posix()}'\n" for f in files), encoding="utf8")
     run(["ffmpeg", "-v", "error", "-y", "-nostdin", "-f", "concat", "-safe", "0", "-i", str(lst),
          *(["-c", "copy"] if copy else extra), str(out)])
-
-
-def apply_overlays(base, overlays, P, out, work, W, H, fps, total, threads, preview):
-    """Composite overlays in passes of 20 to keep the filter graph small."""
-    cur = base
-    batches = [overlays[i:i + 20] for i in range(0, len(overlays), 20)] or [[]]
-    for bi, batch in enumerate(batches):
-        target = out if bi == len(batches) - 1 else work / f"ov_pass{bi}.mp4"
-        if not batch:
-            shutil.copyfile(cur, target)
-            break
-        inputs, chain = ["-reinit_filter", "0", "-i", str(cur)], []
-        last = "[0:v]"
-        for j, o in enumerate(batch, 1):
-            st, en = float(o["start"]), float(o["end"])
-            fi, fo = float(o.get("fade_in", 0.12)), float(o.get("fade_out", 0.12))
-            # Single still input, repeated inside the graph (looping the file input stalls and is slow).
-            inputs += ["-i", str(P(o["image"]))]
-            f = [f"[{j}:v]format=rgba,scale={W}:{H},loop=loop=-1:size=1:start=0,setpts=N/{fps}/TB,"
-                 f"trim=end={en + 0.1:.3f}"]
-            if fi > 0:
-                f.append(f"fade=t=in:st={st:.3f}:d={fi:.3f}:alpha=1")
-            if fo > 0:
-                f.append(f"fade=t=out:st={max(st, en - fo):.3f}:d={fo:.3f}:alpha=1")
-            chain.append(",".join(f) + f"[o{j}]")
-            nxt = f"[v{j}]"
-            chain.append(f"{last}[o{j}]overlay=0:0:eof_action=pass:enable='between(t,{st:.3f},{en:.3f})'{nxt}")
-            last = nxt
-        enc = ["-c:v", "libx264", "-preset", "ultrafast" if preview else "medium", "-crf", "26" if preview else "17",
-               "-pix_fmt", "yuv420p", "-r", str(fps), "-threads", str(threads)]
-        run(["ffmpeg", "-v", "error", "-y", "-nostdin", *inputs, "-filter_complex", ";".join(chain),
-             "-map", last, "-t", f"{total:.3f}", *enc, str(target)])
-        cur = target
 
 
 def mix_audio(e, P, game_wav, out_wav, total):
@@ -374,25 +386,38 @@ def main():
     gdb = e.get("game_audio_db", -26)
 
     import cards
-    kit = cards.Kit(W, H, None, base)
-    overlays = []
-    for s in e["shots"]:
-        if s.get("credit"):
-            pill = work / ("pill_" + hashlib.sha1(s["credit"].encode()).hexdigest()[:10] + ".png")
-            if not pill.exists():
-                cards.credit_pill(kit, s["credit"]).save(pill)
-            overlays.append({"image": str(pill), "start": s["start"], "end": s["end"], "fade_in": 0, "fade_out": 0})
-    overlays += e.get("overlays", [])
+    theme, spec = None, P(e["cards_spec"]) if e.get("cards_spec") else None
+    for cand in ([spec] if spec else [base.parent / "cards" / "cards.json", base / "cards" / "cards.json"]):
+        if cand.exists():
+            theme = json.loads(cand.read_text(encoding="utf-8-sig")).get("theme")
+            break
+    kit = cards.Kit(W, H, theme, base)
+    pill_dir = shots_dir / "pills"
+    pill_dir.mkdir(exist_ok=True)
+    overlays = [dict(o, path=str(P(o["image"]).resolve())) for o in e.get("overlays", [])]
 
     vids, auds = [], []
     n = len(e["shots"])
+    print(f"Overlays: {len(overlays)} + credit pills, composited per shot.", flush=True)
     for i, s in enumerate(e["shots"], 1):
         src = P(s["source"])
-        h = shot_hash(s, src, W, H, fps, a.preview)
+        ovs = []
+        if s.get("credit"):
+            key = json.dumps([s["credit"], kit.t, W, H], sort_keys=True)
+            pill = pill_dir / ("pill_" + hashlib.sha1(key.encode()).hexdigest()[:12] + ".png")
+            if not pill.exists():
+                cards.credit_pill(kit, s["credit"]).save(pill)
+            ovs.append({"path": str(pill), "on": 0.0, "off": s["end"] - s["start"], "g_start": s["start"],
+                        "g_end": s["end"], "fade_in": 0, "fade_out": 0, "shot_start": s["start"]})
+        ovs += shot_overlays(s, overlays, fps)
+        h = shot_hash(s, src, ovs, W, H, fps, a.preview)
         v, au = shots_dir / f"{h}.mp4", shots_dir / f"{h}.wav"
         if not (v.exists() and au.exists()):
             print(f"[{i}/{n}] {src.name} @ {s.get('in', 0)}s ({s['end'] - s['start']:.2f}s)", flush=True)
-            render_shot(s, src, v, au, W, H, fps, s.get("game_db", gdb), a.threads, a.preview)
+            tv, ta = v.with_suffix(".tmp.mp4"), au.with_suffix(".tmp.wav")
+            render_shot(s, src, tv, ta, W, H, fps, s.get("game_db", gdb), a.threads, a.preview, ovs)
+            tv.replace(v)
+            ta.replace(au)
         vids.append(v)
         auds.append(au)
     print("Joining picture...", flush=True)
@@ -400,9 +425,7 @@ def main():
     concat(vids, base_v, work)
     game = work / "game_audio.wav"
     concat(auds, game, work)
-    print(f"Overlays ({len(overlays)})...", flush=True)
-    pic = work / "picture_overlaid.mp4"
-    apply_overlays(base_v, overlays, P, pic, work, W, H, fps, total, a.threads, a.preview)
+    pic = base_v
     print("Mixing audio...", flush=True)
     mix = work / "mix.wav"
     mix_audio(e, P, game, mix, total)

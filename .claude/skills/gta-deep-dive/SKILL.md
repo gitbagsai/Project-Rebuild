@@ -28,6 +28,8 @@ python SKILL_DIR/scripts/check_tools.py PROJECT
 
 All scripts take project paths as arguments; run them from anywhere. Run them one at a time and keep the computer usable: no parallel downloads or renders.
 
+**Where it runs.** Search and download need YouTube (`www.youtube.com` plus the per-server `*.googlevideo.com` video hosts) and a residential connection; YouTube bot-checks most cloud IPs. In a cloud or sandboxed session, test once with `search.py`: if the network policy refuses the host, do not keep retrying. Do the research and script there, and run `search.py`/`fetch.py` and the renders on the user's own computer (or ask them to drop clips into `PROJECT/sources/` and record each one in `sources/manifest.jsonl` with its credit). `transcribe.py` downloads its model from `huggingface.co` on first use.
+
 ## 1. Find the angle
 
 From the idea, write `script/angle.md`:

@@ -87,10 +87,19 @@ def main():
     else:
         bounds = [a.t0] + [c for c in cuts if a.t0 < c < t1] + [t1]
         times = [(x, y - x) for x, y in zip(bounds, bounds[1:]) if y - x > 0.05]
-    try:
-        font = ImageFont.truetype("arial.ttf", 15)
-    except OSError:
-        font = ImageFont.load_default()
+    font = None
+    for cand in ("arial.ttf", "/System/Library/Fonts/Supplemental/Arial.ttf", "/Library/Fonts/Arial.ttf",
+                 "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", "/usr/share/fonts/TTF/DejaVuSans.ttf"):
+        try:
+            font = ImageFont.truetype(cand, 15)
+            break
+        except OSError:
+            pass
+    if font is None:
+        try:
+            font = ImageFont.load_default(size=15)
+        except TypeError:  # Pillow < 10.1
+            font = ImageFont.load_default()
     tiles = []
     with tempfile.TemporaryDirectory() as td:
         for i, (start, d) in enumerate(times):
